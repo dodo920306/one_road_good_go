@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>地圖對角線顯示</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">地圖對角線顯示</h2>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+               <input type="text" id="start" class="form-control" placeholder="輸入起始地址">
+            </div> 
+            <div class="form-group col-md-6">
+                <input type="text" id="end" class="form-control" placeholder="輸入終點地址">
+            </div>
+        </div>
+        <button onclick="showDiagonal()" class="btn btn-primary mb-4">顯示對角線</button>
+        <div class="form-row">
+            <div class="form-group col-md-2">
+              <img src = "cctv.png" style=" width: 25px; height: 41px;">
+              <input type="checkbox" id="checkbox" name="checkbox" checked />
+              <label for="攝影機數量">攝影機數量:</label>
+            </div>
+            <div class="form-group col-md-2">
+            <img src = "sideWalk.png" style=" width: 25px; height: 41px;">
+              <input type="checkbox" id="checkbox" name="checkbox" />
+              <label for="人行道數量">人行道數量:</label>
+            </div>
+            <div class="form-group col-md-2">
+            <img src = "light.jpg" style=" width: 35px; height: 41px;">
+              <input type="checkbox" id="checkbox" name="checkbox" />
+              <label for="路燈數量">路燈數量:</label>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        var map = L.map('map').setView([22.9966, 120.2211], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // var bounds = [
+        //     [22.921, 120.148], 
+        //     [23.059, 120.318]  
+        // ];
+        // map.setMaxBounds(bounds);
+        // map.on('drag', function() {
+        //     map.panInsideBounds(bounds, { animate: false });
+        // });
+
+        //cctvData
+        function getcctv () {
+          $.ajax({
+              method: 'GET',
+              url: "http://35.192.24.146/api/cctv",
+              success: function (data) {
+                
+              },
+              error: function (jqXHR) {
+                  console.log(jqXHR)
+              }
+          });
+      }
+
+
+        async function getCoordinatesNominatim(address) {
+            try {
+                console.log('請求地址座標 (Nominatim)：', address);
+                const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+                console.log('Nominatim API 返回數據：', response.data);
+                if (response.data.length > 0) {
+                    return [response.data[0].lat, response.data[0].lon];
+                } else {
+                    console.error('找不到地址 (Nominatim)：', address, response.data);
+                    return null;
+                }
+            } catch (error) {
+                console.error('獲取地址座標時發生錯誤 (Nominatim)：', error);
+                return null;
+            }
+        }
+
+        async function getCoordinatesGoogle(address) {
+            try {
+                console.log('請求地址座標 (Google)：', address);
+                const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=YOUR_API_KEY`);
+                console.log('Google Geocoding API 返回數據：', response.data);
+                if (response.data.status === 'OK') {
+                    const location = response.data.results[0].geometry.location;
+                    return [location.lat, location.lng];
+                } else {
+                    console.error('找不到地址 (Google)：', address, response.data);
+                    return null;
+                }
+            } catch (error) {
+                console.error('獲取地址座標時發生錯誤 (Google)：', error);
+                return null;
+            }
+        }
+
+        async function showDiagonal() {
+            const startAddress = document.getElementById('start').value;
+            const endAddress = document.getElementById('end').value;
+
+            console.log('起始地址：', startAddress);
+            console.log('終點地址：', endAddress);
+
+            let startCoordinates = await getCoordinatesNominatim(startAddress);
+            if (!startCoordinates) {
+                startCoordinates = await getCoordinatesGoogle(startAddress);
+            }
+
+            let endCoordinates = await getCoordinatesNominatim(endAddress);
+            if (!endCoordinates) {
+                endCoordinates = await getCoordinatesGoogle(endAddress);
+            }
+
+            if (startCoordinates && endCoordinates) {
+                const startLatLng = L.latLng(startCoordinates[0], startCoordinates[1]);
+                const endLatLng = L.latLng(endCoordinates[0], endCoordinates[1]);
+
+                console.log('起始座標：', startLatLng);
+                console.log('終點座標：', endLatLng);
+
+                map.eachLayer(function (layer) {
+                    if (layer instanceof L.Polyline || layer instanceof L.Marker || layer instanceof L.Circle) {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                L.polyline([startLatLng, endLatLng], { color: 'red' }).addTo(map);
+
+                // 計算圓心和半徑
+                const centerLat = (startLatLng.lat + endLatLng.lat) / 2;
+                const centerLng = (startLatLng.lng + endLatLng.lng) / 2;
+                const radius = map.distance(startLatLng, endLatLng) / 2;
+
+                const circle = L.circle([centerLat, centerLng], { radius }).addTo(map);
+               
+                // 添加攝影機標記 坐標緯度 Longitude,坐標經度 Latitude
+                $.ajax({
+                    method: 'GET',
+                    url: "http://35.192.24.146/api/cctv",
+                    success: function (data) {
+                      data.cctv.forEach(function(cctv) {
+                    const cctvLatLng = L.latLng(cctv.Longitude, cctv.Latitude);
+                    if (circle.getBounds().contains(cctvLatLng)) {
+                        const marker = L.marker(cctvLatLng).addTo(map);
+                        marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
+                    }
+                });
+                    },
+                    error: function (jqXHR) {
+                        console.log(jqXHR)
+                    }
+                });
+                
+
+                map.fitBounds(circle.getBounds());
+            } else {
+                alert('無法獲取起始或終點地址的座標');
+            }
+        }
+    </script>
+</body>
+</html>
