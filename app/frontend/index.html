@@ -4,6 +4,8 @@
     <title>地圖對角線顯示</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js">
+    
     <style>
         #map {
             height: 600px;
@@ -66,7 +68,6 @@
               method: 'GET',
               url: "http://35.192.24.146/api/cctv",
               success: function (data) {
-                
               },
               error: function (jqXHR) {
                   console.log(jqXHR)
@@ -97,14 +98,14 @@
                 console.log('請求地址座標 (Google)：', address);
                 const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=YOUR_API_KEY`);
                 console.log('Google Geocoding API 返回數據：', response.data);
-                if (response.data.status === 'OK') {
-                    const location = response.data.results[0].geometry.location;
-                    return [location.lat, location.lng];
-                } else {
-                    console.error('找不到地址 (Google)：', address, response.data);
-                    return null;
-                }
-            } catch (error) {
+                  if (response.data.status === 'OK') {
+                      const location = response.data.results[0].geometry.location;
+                      return [location.lat, location.lng];
+                  } else {
+                      console.error('找不到地址 (Google)：', address, response.data);
+                      return null;
+                  }
+            }catch (error) {
                 console.error('獲取地址座標時發生錯誤 (Google)：', error);
                 return null;
             }
