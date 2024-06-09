@@ -30,12 +30,12 @@
               <label for="攝影機數量">攝影機數量:</label>
             </div>
             <div class="form-group col-md-2">
-            <img src = "/static/sideWalk.png" style=" width: 25px; height: 41px;">
+            <img src = "/static/sidewalk.png" style=" width: 25px; height: 41px;">
               <input type="checkbox" id="checkbox" name="checkbox" />
               <label for="人行道數量">人行道數量:</label>
             </div>
             <div class="form-group col-md-2">
-            <img src = "/static/light.jpg" style=" width: 35px; height: 41px;">
+            <img src = "/static/lamp.png" style=" width: 35px; height: 41px;">
               <input type="checkbox" id="checkbox" name="checkbox" />
               <label for="路燈數量">路燈數量:</label>
             </div>
@@ -51,16 +51,6 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
-        // var bounds = [
-        //     [22.921, 120.148], 
-        //     [23.059, 120.318]  
-        // ];
-        // map.setMaxBounds(bounds);
-        // map.on('drag', function() {
-        //     map.panInsideBounds(bounds, { animate: false });
-        // });
-
 
 
         async function getCoordinatesNominatim(address) {
@@ -97,12 +87,7 @@
                 return null;
             }
         }
-        var lightIcon = L.icon({
-            iconUrl: 'light.jpg',
-            iconSize: [25, 41], // 攝影機圖標的大小
-            iconAnchor: [12, 41], // 圖標的錨點
-            popupAnchor: [1, -34], // 彈出視窗的錨點
-        });
+
         async function showDiagonal() {
             const startAddress = document.getElementById('start').value;
             const endAddress = document.getElementById('end').value;
@@ -147,13 +132,13 @@
                     method: 'GET',
                     url: "http://35.192.24.146/api/cctv",
                     success: function (data) {
-                      data.cctv.forEach(function(cctv) {
-                    const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
-                    if (circle.getBounds().contains(cctvLatLng)) {
-                        const marker = L.marker(cctvLatLng).addTo(map);
-                        marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
-                    }
-                    });
+                        data.cctv.forEach(function(cctv) {
+                            const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
+                            if (circle.getBounds().contains(cctvLatLng)) {
+                                const marker = L.marker(cctvLatLng).addTo(map);
+                                marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
+                            }
+                        });
                     },
                     error: function (jqXHR) {
                         console.log(jqXHR)
@@ -163,14 +148,39 @@
                     method: 'GET',
                     url: "http://35.192.24.146/api/lamp/",
                     success: function (data) {
-                      data.lamp.forEach(function(lamp) {
-                    const cctvLatLng = L.latLng(lamp.Y, lamp.X);
-                    if (circle.getBounds().contains(cctvLatLng)) {
-                        const marker = L.marker(cctvLatLng, { icon: lightIcon }).addTo(map);
-                        
-                        marker.bindPopup(`<b>${cctv}</b><br><a href="${cctv}" target="_blank">查看影像</a>`);
+                        data.lamp.forEach(function(lamp) {
+                            const lampLatLng = L.latLng(lamp.Y, lamp.X);
+                            if (circle.getBounds().contains(lampLatLng)) {
+                                const marker = L.marker(lampLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/lamp.png',
+                                        iconSize: [25, 41],
+                                    })
+                                }).addTo(map);
+                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                            }
+                        });
+                    },
+                    error: function (jqXHR) {
+                        console.log(jqXHR)
                     }
-                    });
+                });
+                $.ajax({
+                    method: 'GET',
+                    url: "http://35.192.24.146/api/accident/",
+                    success: function (data) {
+                        data.accident.forEach(function(accident) {
+                            const accidentLatLng = L.latLng(accident.Y, accident.X);
+                            if (circle.getBounds().contains(accidentLatLng)) {
+                                const marker = L.marker(accidentLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/accident.png',
+                                        iconSize: [25, 41],
+                                    })
+                                }).addTo(map);
+                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                            }
+                        });
                     },
                     error: function (jqXHR) {
                         console.log(jqXHR)
