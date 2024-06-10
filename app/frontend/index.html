@@ -3,8 +3,11 @@
 <head>
     <title>地圖對角線顯示</title>
     <meta charsets="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
     <style>
       #map {
           height: 600px;
@@ -116,6 +119,8 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
     <script>
         let map = L.map('map').setView([22.9966, 120.2211], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -157,7 +162,14 @@
                 });
 
                 L.polyline([startLatLng, endLatLng], { color: 'red' }).addTo(map);
-
+                // Add routing control
+                L.Routing.control({
+                    waypoints: [            
+                        startLatLng, endLatLng
+                    ],
+                    routeWhileDragging: true,
+                    geocoder: L.Control.Geocoder.nominatim()
+                }).addTo(map);
                 const bounds = L.latLngBounds(startLatLng, endLatLng);
                 L.rectangle(bounds, {color: "blue", weight: 1}).addTo(map);
                 map.fitBounds(bounds);
