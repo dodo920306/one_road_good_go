@@ -1,26 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>地圖對角線顯示</title>
+    <title>一路好走</title>
     <meta charsets="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <link rel="icon" type="image/png" href="/static/favicon.png">
 
     <style>
-      #map {
-          height: 600px;
-          width: 100%;
-          margin-top: 20px;
-          background-color: #ffffff;
-          border-radius: 25px;
-      }
-      body {            
-          margin: 0;
-          padding: 20px;
-          font-family: Arial, sans-serif;
-      }
+        #map {
+            height: 600px;
+            width: 100%;
+            margin-top: 20px;
+            color: #000000;
+            border-radius: 25px;
+        }
+        body {            
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #fff;
+        }
         .checkbox-container {
             display: flex;
             justify-content: space-around;
@@ -81,7 +84,7 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="mb-4">地圖對角線顯示</h2>
+        <h2 class="mb-4">一路好走</h2>
         <div class="form-row">
             <div class="form-group col-md-6">
                <input type="text" id="start" class="form-control" placeholder="輸入起始地址">
@@ -89,26 +92,28 @@
             <div class="form-group col-md-6">
                 <input type="text" id="end" class="form-control" placeholder="輸入終點地址">
             </div>
+            <div class="form-group col-md-6">
+                <button onclick="showDiagonal()" class="btn btn-primary mb-4">Search</button>
+            </div>
         </div>
-        <button onclick="showDiagonal()" class="btn btn-primary mb-4">顯示對角線</button>
         <div class="form-row">
             <div class="form-group col-md-2">
-                <img src = "/static/cctv.png" style=" width: 25px; height: 41px;">
+                <img src = "/static/cctv_icon.png" style=" width: 25px; height: 41px;">
                 <input type="checkbox" id="isCCTV"/>
                 <label>顯示攝影機</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/sidewalk.png" style=" width: 25px; height: 41px;">
+                <img src = "/static/sidewalk_icon.png" style=" width: 25px; height: 41px;">
                 <input type="checkbox" id="isSIDEWALK"/>
                 <label>顯示人行道</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/lamp.png" style=" width: 35px; height: 41px;">
+                <img src = "/static/lamp_icon.png" style=" width: 35px; height: 41px;">
                 <input type="checkbox" id="isLAMP"/>
                 <label>顯示路燈</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/accident.png" style=" width: 35px; height: 41px;">
+                <img src = "/static/accident_icon.png" style=" width: 35px; height: 41px;">
                 <input type="checkbox" id="isACCIDENT"/>
                 <label>顯示事故</label>
             </div>
@@ -126,6 +131,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        let control;
 
         async function getCoordinatesNominatim(address) {
             try {
@@ -154,6 +160,7 @@
             if (startCoordinates && endCoordinates) {
                 const startLatLng = L.latLng(startCoordinates[0], startCoordinates[1]);
                 const endLatLng = L.latLng(endCoordinates[0], endCoordinates[1]);
+                const bounds = L.latLngBounds(startLatLng, endLatLng);
 
                 map.eachLayer(function (layer) {
                     if (layer instanceof L.Polyline || layer instanceof L.Marker || layer instanceof L.Circle) {
@@ -161,16 +168,13 @@
                     }
                 });
 
-                L.polyline([startLatLng, endLatLng], { color: 'red' }).addTo(map);
-                // Add routing control
-                L.Routing.control({
-                    waypoints: [            
-                        startLatLng, endLatLng
-                    ],
-                    routeWhileDragging: true,
-                    geocoder: L.Control.Geocoder.nominatim()
+                L.polyline([startLatLng, endLatLng], { color: 'red', weight: 5 }).addTo(map);
+                if (control) {
+                    map.removeControl(control);
+                }
+                control = L.Routing.control({
+                    waypoints: [startLatLng, endLatLng],
                 }).addTo(map);
-                const bounds = L.latLngBounds(startLatLng, endLatLng);
                 L.rectangle(bounds, {color: "blue", weight: 1}).addTo(map);
                 map.fitBounds(bounds);
                 $.ajax({
@@ -225,7 +229,7 @@
                                 if (sidewalks.hasOwnProperty(sidewalk_id)) {
                                     const polyline = L.polyline(sidewalks[sidewalk_id], {color: 'green'}).addTo(map);
                                     const sidewalk = data.sidewalk.filter(element => element.id == sidewalk_id);
-                                    polyline.bindPopup(`<b>${sidewalk[0].name}</b><br><b>${sidewalk[0].area}</b><br><b>起點: ${sidewalk[0].start_point}</b><br><b>終點: ${sidewalk[0].end_point}</b><br><b>總長: ${sidewalk[0].length}</b><br><b>寬度: ${sidewalk[0].width}</b>`);
+                                    polyline.bindPopup(`<b>${sidewalk[0].name}</b><br><b>${sidewalk[0].area}</b><br><b>起點: ${sidewalk[0].start_point}</b><br><b>終點: ${sidewalk[0].end_point}</b><br><b>總長: ${sidewalk[0].length} m</b><br><b>寬度: ${sidewalk[0].width} m</b>`);
                                 }
                             }
                         }
