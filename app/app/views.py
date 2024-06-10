@@ -3,17 +3,23 @@ from .models import CCTV, LAMP, ACCIDENT, SIDEWALK, SIDEWALK_POINT
 from django.http import JsonResponse
 
 # Create your views here.
-def cctv(request):
-    return JsonResponse({"applied": True, "error_msg": "", "cctv": list(CCTV.objects.all().values())})
-
-def lamp(request):
-    return JsonResponse({"applied": True, "error_msg": "", "lamp": list(LAMP.objects.all().values())})
-
-def accident(request):
-    return JsonResponse({"applied": True, "error_msg": "", "accident": list(ACCIDENT.objects.all().values())})
-
-def sidewalk(request):
-    return JsonResponse({"applied": True, "error_msg": "", "sidewalk": list(SIDEWALK.objects.all().values())})
-
-def sidewalk_point(request):
-    return JsonResponse({"applied": True, "error_msg": "", "sidewalk_point": list(SIDEWALK_POINT.objects.all().values())})
+def data(request):
+    try:
+        n = request.GET["n"]
+        s = request.GET["s"]
+        w = request.GET["w"]
+        e = request.GET["e"]
+        
+        response = {"applied": True, "error_msg": "", "cctv": list(CCTV.objects.filter(
+            Latitude__range=(s, n),
+            Longitude__range=(w, e)
+        ).values()), "lamp": list(LAMP.objects.filter(
+            Y__range=(s, n),
+            X__range=(w, e)
+        ).values()), "accident": list(ACCIDENT.objects.filter(
+            Y__range=(s, n),
+            X__range=(w, e)
+        ).values())}
+    except Exception as e:
+        response = {"applied": False, "error_msg": repr(e)}
+    return JsonResponse(response)

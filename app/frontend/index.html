@@ -25,19 +25,24 @@
         <button onclick="showDiagonal()" class="btn btn-primary mb-4">顯示對角線</button>
         <div class="form-row">
             <div class="form-group col-md-2">
-              <img src = "/static/cctv.png" style=" width: 25px; height: 41px;">
-              <input type="checkbox" id="checkbox" name="checkbox" checked />
-              <label for="攝影機數量">攝影機數量:</label>
+                <img src = "/static/cctv.png" style=" width: 25px; height: 41px;">
+                <input type="checkbox" id="isCCTV"/>
+                <label>顯示攝影機</label>
             </div>
             <div class="form-group col-md-2">
-            <img src = "/static/sidewalk.png" style=" width: 25px; height: 41px;">
-              <input type="checkbox" id="checkbox" name="checkbox" />
-              <label for="人行道數量">人行道數量:</label>
+                <img src = "/static/sidewalk.png" style=" width: 25px; height: 41px;">
+                <input type="checkbox" id="isSIDEWALK"/>
+                <label>顯示人行道</label>
             </div>
             <div class="form-group col-md-2">
-            <img src = "/static/lamp.png" style=" width: 35px; height: 41px;">
-              <input type="checkbox" id="checkbox" name="checkbox" />
-              <label for="路燈數量">路燈數量:</label>
+                <img src = "/static/lamp.png" style=" width: 35px; height: 41px;">
+                <input type="checkbox" id="isLAMP"/>
+                <label>顯示路燈</label>
+            </div>
+            <div class="form-group col-md-2">
+                <img src = "/static/accident.png" style=" width: 35px; height: 41px;">
+                <input type="checkbox" id="isACCIDENT"/>
+                <label>顯示事故</label>
             </div>
         </div>
         <div id="map"></div>
@@ -47,11 +52,10 @@
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
-        var map = L.map('map').setView([22.9966, 120.2211], 13);
+        let map = L.map('map').setView([22.9966, 120.2211], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
 
         async function getCoordinatesNominatim(address) {
             try {
@@ -70,40 +74,20 @@
             }
         }
 
-        async function getCoordinatesGoogle(address) {
-            try {
-                console.log('請求地址座標 (Google)：', address);
-                const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=YOUR_API_KEY`);
-                console.log('Google Geocoding API 返回數據：', response.data);
-                if (response.data.status === 'OK') {
-                    const location = response.data.results[0].geometry.location;
-                    return [location.lat, location.lng];
-                } else {
-                    console.error('找不到地址 (Google)：', address, response.data);
-                    return null;
-                }
-            } catch (error) {
-                console.error('獲取地址座標時發生錯誤 (Google)：', error);
-                return null;
-            }
-        }
-
         async function showDiagonal() {
             const startAddress = document.getElementById('start').value;
             const endAddress = document.getElementById('end').value;
+            const isCCTV = document.getElementById('isCCTV').checked;
+            const isLAMP = document.getElementById('isLAMP').checked;
+            const isACCIDENT = document.getElementById('isACCIDENT').checked;
+            const isSIDEWALK= document.getElementById('isSIDEWALK').checked;
 
             console.log('起始地址：', startAddress);
             console.log('終點地址：', endAddress);
 
             let startCoordinates = await getCoordinatesNominatim(startAddress);
-            if (!startCoordinates) {
-                startCoordinates = await getCoordinatesGoogle(startAddress);
-            }
 
             let endCoordinates = await getCoordinatesNominatim(endAddress);
-            if (!endCoordinates) {
-                endCoordinates = await getCoordinatesGoogle(endAddress);
-            }
 
             if (startCoordinates && endCoordinates) {
                 const startLatLng = L.latLng(startCoordinates[0], startCoordinates[1]);
@@ -126,59 +110,45 @@
                 const radius = map.distance(startLatLng, endLatLng) / 2;
 
                 const circle = L.circle([centerLat, centerLng], { radius }).addTo(map);
-               
-                // 添加攝影機標記 坐標經度 Longitude,坐標緯度 Latitude
+                const bounds = map.getBounds();
                 $.ajax({
                     method: 'GET',
-                    url: "http://35.192.24.146/api/cctv",
+                    url: `http://35.192.24.146/api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}`,
                     success: function (data) {
                         data.cctv.forEach(function(cctv) {
                             const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
                             if (circle.getBounds().contains(cctvLatLng)) {
-                                const marker = L.marker(cctvLatLng).addTo(map);
+                                const marker = L.marker(cctvLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/cctv.png',
+                                        iconSize: [25, 41]
+                                    })
+                                }).addTo(map);
                                 marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
                             }
                         });
-                    },
-                    error: function (jqXHR) {
-                        console.log(jqXHR)
-                    }
-                });
-                $.ajax({
-                    method: 'GET',
-                    url: "http://35.192.24.146/api/lamp/",
-                    success: function (data) {
                         data.lamp.forEach(function(lamp) {
                             const lampLatLng = L.latLng(lamp.Y, lamp.X);
                             if (circle.getBounds().contains(lampLatLng)) {
                                 const marker = L.marker(lampLatLng, {
                                     icon: L.icon({
                                         iconUrl: '/static/lamp.png',
-                                        iconSize: [25, 41],
+                                        iconSize: [25, 41]
                                     })
                                 }).addTo(map);
                                 marker.bindPopup(`<b>${lamp.Walt} W</b>`);
                             }
                         });
-                    },
-                    error: function (jqXHR) {
-                        console.log(jqXHR)
-                    }
-                });
-                $.ajax({
-                    method: 'GET',
-                    url: "http://35.192.24.146/api/accident/",
-                    success: function (data) {
                         data.accident.forEach(function(accident) {
                             const accidentLatLng = L.latLng(accident.Y, accident.X);
                             if (circle.getBounds().contains(accidentLatLng)) {
                                 const marker = L.marker(accidentLatLng, {
                                     icon: L.icon({
                                         iconUrl: '/static/accident.png',
-                                        iconSize: [25, 41],
+                                        iconSize: [25, 41]
                                     })
                                 }).addTo(map);
-                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                                marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
                             }
                         });
                     },
@@ -186,8 +156,6 @@
                         console.log(jqXHR)
                     }
                 });
-
-                
 
                 map.fitBounds(circle.getBounds());
             } else {
