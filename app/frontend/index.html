@@ -179,42 +179,48 @@
                     method: 'GET',
                     url: `http://35.192.24.146/api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}`,
                     success: function (data) {
-                        data.cctv.forEach(function(cctv) {
-                            const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
-                            if (circle.getBounds().contains(cctvLatLng)) {
-                                const marker = L.marker(cctvLatLng, {
-                                    icon: L.icon({
-                                        iconUrl: '/static/cctv.png',
-                                        iconSize: [25, 41]
-                                    })
-                                }).addTo(map);
-                                marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
-                            }
-                        });
-                        data.lamp.forEach(function(lamp) {
-                            const lampLatLng = L.latLng(lamp.Y, lamp.X);
-                            if (circle.getBounds().contains(lampLatLng)) {
-                                const marker = L.marker(lampLatLng, {
-                                    icon: L.icon({
-                                        iconUrl: '/static/lamp.png',
-                                        iconSize: [25, 41]
-                                    })
-                                }).addTo(map);
-                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
-                            }
-                        });
-                        data.accident.forEach(function(accident) {
-                            const accidentLatLng = L.latLng(accident.Y, accident.X);
-                            if (circle.getBounds().contains(accidentLatLng)) {
-                                const marker = L.marker(accidentLatLng, {
-                                    icon: L.icon({
-                                        iconUrl: '/static/accident.png',
-                                        iconSize: [25, 41]
-                                    })
-                                }).addTo(map);
-                                marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
-                            }
-                        });
+                        if (isCCTV) {
+                            data.cctv.forEach(function(cctv) {
+                                const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
+                                if (circle.getBounds().contains(cctvLatLng)) {
+                                    const marker = L.marker(cctvLatLng, {
+                                        icon: L.icon({
+                                            iconUrl: '/static/cctv.png',
+                                            iconSize: [25, 41]
+                                        })
+                                    }).addTo(map);
+                                    marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
+                                }
+                            });
+                        }
+                        if (isLAMP) {
+                            data.lamp.forEach(function(lamp) {
+                                const lampLatLng = L.latLng(lamp.Y, lamp.X);
+                                if (circle.getBounds().contains(lampLatLng)) {
+                                    const marker = L.marker(lampLatLng, {
+                                        icon: L.icon({
+                                            iconUrl: '/static/lamp.png',
+                                            iconSize: [25, 41]
+                                        })
+                                    }).addTo(map);
+                                    marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                                }
+                            });
+                        }
+                        if (isACCIDENT) {
+                            data.accident.forEach(function(accident) {
+                                const accidentLatLng = L.latLng(accident.Y, accident.X);
+                                if (circle.getBounds().contains(accidentLatLng)) {
+                                    const marker = L.marker(accidentLatLng, {
+                                        icon: L.icon({
+                                            iconUrl: '/static/accident.png',
+                                            iconSize: [25, 41]
+                                        })
+                                    }).addTo(map);
+                                    marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
+                                }
+                            });
+                        }
                     },
                     error: function (jqXHR) {
                         console.log(jqXHR)
