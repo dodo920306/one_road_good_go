@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>地圖對角線顯示</title>
+    <meta charsets="utf-8"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
@@ -81,7 +82,7 @@
         <div class="form-row">
             <div class="form-group col-md-6">
                <input type="text" id="start" class="form-control" placeholder="輸入起始地址">
-            </div> 
+            </div>
             <div class="form-group col-md-6">
                 <input type="text" id="end" class="form-control" placeholder="輸入終點地址">
             </div>
@@ -120,6 +121,13 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        map.locate({
+            setView: false,
+            watch: true,
+            maxZoom: 16,
+            enableHighAccuracy: true,
+            timeout: 10000
+        });
 
         async function getCoordinatesNominatim(address) {
             try {
@@ -174,60 +182,69 @@
                 const radius = map.distance(startLatLng, endLatLng) / 2;
 
                 const circle = L.circle([centerLat, centerLng], { radius }).addTo(map);
-                const bounds = map.getBounds();
+                const bounds = circle.getBounds();
+                map.fitBounds(bounds);
                 $.ajax({
                     method: 'GET',
-                    url: `http://35.192.24.146/api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}`,
+                    url: `http://35.192.24.146/api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}&isCCTV=${isCCTV}&isLAMP=${isLAMP}&isACCIDENT=${isACCIDENT}&isSIDEWALK=${isSIDEWALK}`,
                     success: function (data) {
                         if (isCCTV) {
                             data.cctv.forEach(function(cctv) {
                                 const cctvLatLng = L.latLng(cctv.Latitude, cctv.Longitude);
-                                if (circle.getBounds().contains(cctvLatLng)) {
-                                    const marker = L.marker(cctvLatLng, {
-                                        icon: L.icon({
-                                            iconUrl: '/static/cctv.png',
-                                            iconSize: [25, 41]
-                                        })
-                                    }).addTo(map);
-                                    marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
-                                }
+                                const marker = L.marker(cctvLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/cctv.png',
+                                        iconSize: [25, 41]
+                                    })
+                                }).addTo(map);
+                                marker.bindPopup(`<b>${cctv.Description}</b><br><a href="${cctv.Url}" target="_blank">查看影像</a>`);
                             });
                         }
                         if (isLAMP) {
                             data.lamp.forEach(function(lamp) {
                                 const lampLatLng = L.latLng(lamp.Y, lamp.X);
-                                if (circle.getBounds().contains(lampLatLng)) {
-                                    const marker = L.marker(lampLatLng, {
-                                        icon: L.icon({
-                                            iconUrl: '/static/lamp.png',
-                                            iconSize: [25, 41]
-                                        })
-                                    }).addTo(map);
-                                    marker.bindPopup(`<b>${lamp.Walt} W</b>`);
-                                }
+                                const marker = L.marker(lampLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/lamp.png',
+                                        iconSize: [25, 41]
+                                    })
+                                }).addTo(map);
+                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
                             });
                         }
                         if (isACCIDENT) {
                             data.accident.forEach(function(accident) {
                                 const accidentLatLng = L.latLng(accident.Y, accident.X);
-                                if (circle.getBounds().contains(accidentLatLng)) {
-                                    const marker = L.marker(accidentLatLng, {
-                                        icon: L.icon({
-                                            iconUrl: '/static/accident.png',
-                                            iconSize: [25, 41]
-                                        })
-                                    }).addTo(map);
-                                    marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
-                                }
+                                const marker = L.marker(accidentLatLng, {
+                                    icon: L.icon({
+                                        iconUrl: '/static/accident.png',
+                                        iconSize: [25, 41]
+                                    })
+                                }).addTo(map);
+                                marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
                             });
+                        }
+                        if (isSIDEWALK) {
+                            let sidewalks = {};
+                            data.sidewalk_point.forEach(function(point) {
+                                if (!sidewalks[point.Sidewalk_id]) {
+                                    sidewalks[point.Sidewalk_id] = [];
+                                }
+                                sidewalks[point.Sidewalk_id].push(L.latLng(point.Y, point.X));
+                            });
+                            for (let sidewalk_id in sidewalks) {
+                                if (sidewalks.hasOwnProperty(sidewalk_id)) {
+                                    const polyline = L.polyline(sidewalks[sidewalk_id], {color: 'green'}).addTo(map);
+                                    const sidewalk = data.sidewalk.filter(element => element.id == sidewalk_id);
+                                    polyline.bindPopup(`<b>${sidewalk[0].name}</b><br><b>${sidewalk[0].area}</b><br><b>起點: ${sidewalk[0].start_point}</b><br><b>終點: ${sidewalk[0].end_point}</b><br><b>總長: ${sidewalk[0].length}</b><br><b>寬度: ${sidewalk[0].width}</b>`);
+                                }
+                            }
                         }
                     },
                     error: function (jqXHR) {
                         console.log(jqXHR)
                     }
                 });
-
-                map.fitBounds(circle.getBounds());
             } else {
                 alert('無法獲取起始或終點地址的座標');
             }
