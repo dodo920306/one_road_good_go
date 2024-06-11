@@ -14,14 +14,14 @@
             height: 600px;
             width: 100%;
             margin-top: 20px;
-            color: #000000;
+            color: #1e1e1e;
             border-radius: 25px;
         }
         body {            
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #000000;
+            background-color: #1e1e1e;
             color: #fff;
         }
         .checkbox-container {
@@ -42,7 +42,7 @@
             box-shadow: 0px 0px 3px gray inset;
             width: 30px;
             height: 30px;
-            border: 1px solid #e6e6e6;
+            border: 2px solid #e6e6e6;
             border-radius: 99em;
             background-color: #fff;
             cursor: pointer;
@@ -55,7 +55,7 @@
         .btn-primary {
             height: 40px;
             width: 100px;
-            border: 1px solid #e6e6e6;
+            border: 2px solid #989898;
             border-radius: 99em;
             background-color: #424242;
             box-shadow: 0px 0px 2px gray;
@@ -84,37 +84,36 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="mb-4">一路好走</h2>
+        <img src = "/static/logo.png" style=" width: 280px; height: 80px;">
         <div class="form-row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-5">
                <input type="text" id="start" class="form-control" placeholder="輸入起始地址">
             </div>
-            <div class="form-group col-md-6">
+            <img src="/static/arrow.png" style="width: 41px; height: 41px;">
+            <div class="form-group col-md-5">
                 <input type="text" id="end" class="form-control" placeholder="輸入終點地址">
             </div>
-            <div class="form-group col-md-6">
-                <button onclick="showDiagonal()" class="btn btn-primary mb-4">Search</button>
-            </div>
+            <button onclick="showDiagonal()" class="btn btn-primary mb-4">Search</button>
         </div>
         <div class="form-row">
             <div class="form-group col-md-2">
-                <img src = "/static/cctv_icon.png" style=" width: 25px; height: 41px;">
                 <input type="checkbox" id="isCCTV"/>
+                <img src = "/static/cctv_icon.png" style=" width: 35px; height: 41px;">
                 <label>顯示攝影機</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/sidewalk_icon.png" style=" width: 25px; height: 41px;">
                 <input type="checkbox" id="isSIDEWALK"/>
+                <img src = "/static/sidewalk_icon.png" style=" width: 35px; height: 41px;">
                 <label>顯示人行道</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/lamp_icon.png" style=" width: 35px; height: 41px;">
                 <input type="checkbox" id="isLAMP"/>
+                <img src = "/static/lamp_icon.png" style=" width: 35px; height: 41px;">
                 <label>顯示路燈</label>
             </div>
             <div class="form-group col-md-2">
-                <img src = "/static/accident_icon.png" style=" width: 35px; height: 41px;">
                 <input type="checkbox" id="isACCIDENT"/>
+                <img src = "/static/accident_icon.png" style=" width: 35px; height: 41px;">
                 <label>顯示事故</label>
             </div>
         </div>
