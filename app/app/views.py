@@ -30,11 +30,12 @@ def data(request):
                 X__range=(w, e)
             ).values())
         if (isSIDEWALK):
-            response["sidewalk"] = list(SIDEWALK.objects.all().values())
             response["sidewalk_point"] = list(SIDEWALK_POINT.objects.filter(
                 Y__range=(s, n),
                 X__range=(w, e)
             ).values())
+            sidewalks = [point['id'] for point in response["sidewalk_point"]]
+            response["sidewalk"] = list(SIDEWALK.objects.filter(points__in=sidewalks).values())
     except Exception as e:
         response = {"applied": False, "error_msg": repr(e)}
     return JsonResponse(response)

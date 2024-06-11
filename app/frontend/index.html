@@ -126,7 +126,7 @@
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
     <script>
-        let map = L.map('map').setView([22.9966, 120.2211], 17);
+        const map = L.map('map').setView([22.9966, 120.2211], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -148,18 +148,18 @@
         async function showDiagonal() {
             const startAddress = document.getElementById('start').value;
             const endAddress = document.getElementById('end').value;
-            const isCCTV = document.getElementById('isCCTV').checked;
-            const isLAMP = document.getElementById('isLAMP').checked;
-            const isACCIDENT = document.getElementById('isACCIDENT').checked;
-            const isSIDEWALK= document.getElementById('isSIDEWALK').checked;
-
             const startCoordinates = await getCoordinatesNominatim(startAddress);
             const endCoordinates = await getCoordinatesNominatim(endAddress);
 
             if (startCoordinates && endCoordinates) {
+                const isCCTV = document.getElementById('isCCTV').checked;
+                const isLAMP = document.getElementById('isLAMP').checked;
+                const isACCIDENT = document.getElementById('isACCIDENT').checked;
+                const isSIDEWALK= document.getElementById('isSIDEWALK').checked;
                 const startLatLng = L.latLng(startCoordinates[0], startCoordinates[1]);
                 const endLatLng = L.latLng(endCoordinates[0], endCoordinates[1]);
                 const bounds = L.latLngBounds(startLatLng, endLatLng);
+                const url = location.href;
 
                 map.eachLayer(function (layer) {
                     if (layer instanceof L.Polyline || layer instanceof L.Marker || layer instanceof L.Circle) {
@@ -178,7 +178,7 @@
                 map.fitBounds(bounds);
                 $.ajax({
                     method: 'GET',
-                    url: `http://35.192.24.146/api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}&isCCTV=${isCCTV}&isLAMP=${isLAMP}&isACCIDENT=${isACCIDENT}&isSIDEWALK=${isSIDEWALK}`,
+                    url: `${url}api/data/?n=${bounds.getNorth()}&s=${bounds.getSouth()}&w=${bounds.getWest()}&e=${bounds.getEast()}&isCCTV=${isCCTV}&isLAMP=${isLAMP}&isACCIDENT=${isACCIDENT}&isSIDEWALK=${isSIDEWALK}`,
                     success: function (data) {
                         if (isCCTV) {
                             data.cctv.forEach(function(cctv) {
@@ -201,7 +201,9 @@
                                         iconSize: [25, 41]
                                     })
                                 }).addTo(map);
-                                marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                                if (lamp.Walt) {
+                                    marker.bindPopup(`<b>${lamp.Walt} W</b>`);
+                                }
                             });
                         }
                         if (isACCIDENT) {
@@ -226,7 +228,7 @@
                             });
                             for (let sidewalk_id in sidewalks) {
                                 if (sidewalks.hasOwnProperty(sidewalk_id)) {
-                                    const polyline = L.polyline(sidewalks[sidewalk_id], {color: 'green'}).addTo(map);
+                                    const polyline = L.polyline(sidewalks[sidewalk_id], { color: 'green', weight: 5 }).addTo(map);
                                     const sidewalk = data.sidewalk.filter(element => element.id == sidewalk_id);
                                     polyline.bindPopup(`<b>${sidewalk[0].name}</b><br><b>${sidewalk[0].area}</b><br><b>起點: ${sidewalk[0].start_point}</b><br><b>終點: ${sidewalk[0].end_point}</b><br><b>總長: ${sidewalk[0].length} m</b><br><b>寬度: ${sidewalk[0].width} m</b>`);
                                 }
