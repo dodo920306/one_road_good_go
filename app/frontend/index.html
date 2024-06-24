@@ -80,6 +80,10 @@
             height: 41px;
             margin-right: 10px;
         }
+        .custom-popup .leaflet-popup-content-wrapper {
+            max-height: 200px;
+            overflow-y: auto;
+        }
       </style>
 </head>
 <body>
@@ -158,6 +162,7 @@
                 const isSIDEWALK= document.getElementById('isSIDEWALK').checked;
                 const startLatLng = L.latLng(startCoordinates[0], startCoordinates[1]);
                 const endLatLng = L.latLng(endCoordinates[0], endCoordinates[1]);
+                const mergeDistance = 0.05 * map.distance(startLatLng, endLatLng);
                 const bounds = L.latLngBounds(startLatLng, endLatLng);
                 const url = location.href;
 
@@ -207,15 +212,46 @@
                             });
                         }
                         if (isACCIDENT) {
-                            data.accident.forEach(function(accident) {
-                                const accidentLatLng = L.latLng(accident.Y, accident.X);
+                            const mergedAccidents = [];
+
+                            while (data.accident.length > 0) {
+                                const baseAccident = data.accident.pop();
+                                const baseLatLng = L.latLng(baseAccident.Y, baseAccident.X);
+                                let merged = false;
+
+                                for (let i = 0; i < mergedAccidents.length; i++) {
+                                    const compareLatLng = L.latLng(mergedAccidents[i].Y, mergedAccidents[i].X);
+                                    const distance = baseLatLng.distanceTo(compareLatLng);
+
+                                    if (distance < mergeDistance) {
+                                        mergedAccidents[i].accidents.push(baseAccident);
+                                        merged = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!merged) {
+                                    mergedAccidents.push({
+                                        Y: baseAccident.Y,
+                                        X: baseAccident.X,
+                                        accidents: [baseAccident]
+                                    });
+                                }
+                            }
+
+                            mergedAccidents.forEach(function(mergedAccident) {
+                                const accidentLatLng = L.latLng(mergedAccident.Y, mergedAccident.X);
                                 const marker = L.marker(accidentLatLng, {
                                     icon: L.icon({
                                         iconUrl: '/static/accident.png',
                                         iconSize: [25, 41]
                                     })
                                 }).addTo(map);
-                                marker.bindPopup(`<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`);
+                                marker.bindPopup(mergedAccident.accidents.map(accident => 
+                                    `<b>${accident.Type}</b><br><b>${accident.Date}</b><br><b>傷亡人數: ${accident.Casualties}</b>`
+                                ).join('<hr>'), {
+                                    className: 'custom-popup'
+                                });
                             });
                         }
                         if (isSIDEWALK) {
